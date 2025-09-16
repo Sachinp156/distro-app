@@ -1,42 +1,42 @@
-// path: src/lib/api.js
+// src/lib/api.js (append these)
+import { SERVER } from '../constants/server';
+import EventSource from 'react-native-event-source';
 
-// --- Configure your edge server base URL here ---
-let SERVER = "http://192.168.1.50:8000"; // <-- change to your server
+const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
-export const getServer = () => SERVER;
-export const setServer = (url) => { SERVER = url?.replace(/\/+$/, "") || SERVER; };
-
-// --- tiny fetch wrapper ---
 async function req(path, opts = {}) {
-  const res = await fetch(`${SERVER}${path}`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-    ...opts,
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`${res.status} ${res.statusText} :: ${body}`);
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch(`${SERVER}${path}`, { signal: controller.signal, ...opts });
+    const text = await res.text();
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText} :: ${text}`);
+    const ct = res.headers.get('content-type') || '';
+    return ct.includes('application/json') ? (text ? JSON.parse(text) : {}) : text;
+  } finally {
+    clearTimeout(t);
   }
-  // some control endpoints may return empty body; handle gracefully
-  const text = await res.text();
-  return text ? JSON.parse(text) : {};
 }
 
-// --- Single-camera controls ---
-export const startCamera  = (id) => req(`/api/cameras/${id}/start`,  { method: "POST" });
-export const stopCamera   = (id) => req(`/api/cameras/${id}/stop`,   { method: "POST" });
-export const recordCamera = (id, enable) => req(`/api/cameras/${id}/record`, {
-  method: "POST",
-  body: JSON.stringify({ enable: !!enable }),
-});
+// Simple health (hits "/")
+export const healthPing = async () => { await req(`/`, { method:'GET' }); return { ok:true }; };
 
-// --- Batch controls ---
-export const startAll  = () => req(`/api/cameras/actions/start-all`,  { method: "POST" });
-export const stopAll   = () => req(`/api/cameras/actions/stop-all`,   { method: "POST" });
-export const recordAll = (enable) => req(`/api/cameras/actions/record-all`, {
-  method: "POST",
-  body: JSON.stringify({ enable: !!enable }),
-});
+// Alerts
+export const listAlerts = () => req(`/api/alerts`, { method:'GET' });
 
-// --- Status ---
-export const listCameras = () => req(`/api/cameras`);
+// Zones
+export const listZones  = () => req(`/api/zones`,  { method:'GET' });
+export const addZone    = (z) => req(`/api/zones`, { method:'POST', headers: JSON_HEADERS, body: JSON.stringify(z) });
+export const deleteZone = (name) => req(`/api/zones/${encodeURIComponent(name)}`, { method:'DELETE' });
+
+// Homography
+export const setHomography = (payload) =>
+  req(`/api/homography`, { method:'POST', headers: JSON_HEADERS, body: JSON.stringify(payload) });
+
+// Server-Sent Events: /events
+export function openEvents({ onMessage }) {
+  const es = new EventSource(`${SERVER}/events`);
+  es.onmessage = (e) => { try { onMessage?.({ snapshot: JSON.parse(e.data) }); } catch {} };
+  es.onerror   = () => { /* SSE auto-retries */ };
+  return () => es.close();
+}

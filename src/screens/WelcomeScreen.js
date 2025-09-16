@@ -1,4 +1,4 @@
-// src/screens/welcome.js
+// src/screens/WelcomeScreen.js
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,9 +8,9 @@ import { useNavigation } from '@react-navigation/native';
 export default function WelcomeScreen() {
   const navigation = useNavigation();
 
-  const openDashboard = () => navigation.navigate('Main');                      // Tabs root (defaults to Live Feed)
-  const openCameras  = () => navigation.navigate('Main', { screen: 'Cameras' });
-  const openAlerts   = () => navigation.navigate('Main', { screen: 'Alerts' });
+  const openDashboard = () => navigation.navigate('Main');
+  const openCameras = () => navigation.navigate('Main', { screen: 'Cameras' });
+  const openAlerts = () => navigation.navigate('Main', { screen: 'Alerts' });
 
   return (
     <SafeAreaView style={s.container}>

@@ -1,10 +1,9 @@
-// App.js
 import * as React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import WelcomeScreen from './src/screens/WelcomeScreen';     // adjust path if different
-import Tabs from './src/navigation/Tabs';              // ./src/navigation/Tabs.js
+import WelcomeScreen from './src/screens/WelcomeScreen';
+import Tabs from './src/navigation/Tabs';
 
 const Stack = createNativeStackNavigator();
 

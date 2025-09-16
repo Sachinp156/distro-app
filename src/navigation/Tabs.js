@@ -1,13 +1,13 @@
-// src/navigation/Tabs.js
 import React from 'react';
 import { View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Feather } from '@expo/vector-icons';
 
-import DashboardScreen from '../screens/DashboardScreen';   // you already have this
-import LiveCamsScreen from '../screens/LiveCamsScreen';     // you already have this
-import AlertsScreen from '../screens/AlertsScreen';         // you already have this
-import { useAlertStore } from '../state/useAlertStore';     // ok if present (else set pendingAlerts=0)
+import DashboardScreen from '../screens/DashboardScreen';
+import LiveCamsScreen from '../screens/LiveCamsScreen';
+import AlertsScreen from '../screens/AlertsScreen';
+import FloorPlanScreen from '../screens/FloorPlanScreen';
+import { useAlertStore } from '../state/useAlertStore';
 
 const Tab = createBottomTabNavigator();
 
@@ -33,10 +33,12 @@ function TabIcon({ name, color, size, badge = 0 }) {
 }
 
 export default function Tabs({ route }) {
-  const pendingAlerts = 0 // useAlertStore ? useAlertStore((s) => (s.current ? 1 : 0) + s.queue.length) : 0;
+  const pendingAlerts = useAlertStore
+    ? useAlertStore((s) => (s.current ? 1 : 0) + (s.queue?.length || 0))
+    : 0;
 
-  const wanted = route?.params?.screen;                    // e.g., 'Cameras' or 'Alerts'
-  const valid = ['Live Feed', 'Cameras', 'Alerts'];
+  const wanted = route?.params?.screen;
+  const valid = ['Live Feed', 'Cameras', 'Floor Plan', 'Alerts'];
   const initialTab = valid.includes(wanted) ? wanted : 'Live Feed';
 
   return (
@@ -49,7 +51,7 @@ export default function Tabs({ route }) {
         tabBarInactiveTintColor: '#94a3b8',
         tabBarLabelStyle: { fontSize: 12, marginBottom: 3 },
         tabBarHideOnKeyboard: true,
-        sceneStyle: { backgroundColor: '#0B1220' },
+        sceneContainerStyle: { backgroundColor: '#0B1220' },
         lazy: true,
       }}
     >
@@ -68,10 +70,19 @@ export default function Tabs({ route }) {
         }}
       />
       <Tab.Screen
+        name="Floor Plan"
+        component={FloorPlanScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => <TabIcon name="map" color={color} size={size} />,
+        }}
+      />
+      <Tab.Screen
         name="Alerts"
         component={AlertsScreen}
         options={{
-          tabBarIcon: ({ color, size }) => <TabIcon name="bell" color={color} size={size} badge={pendingAlerts} />,
+          tabBarIcon: ({ color, size }) => (
+            <TabIcon name="bell" color={color} size={size} badge={pendingAlerts} />
+          ),
         }}
       />
     </Tab.Navigator>
